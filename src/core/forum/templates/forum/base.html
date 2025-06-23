@@ -1,0 +1,41 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>{% block title %}Forum Académique{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+  <header>
+    <h1>Forum Académique de l’UCC</h1>
+    <nav>
+      {% if user.is_authenticated %}
+        <a href="{% url 'dashboard' %}">Accueil</a>
+        {% if user.profile_type == 'etudiant' %}
+          <a href="{% url 'etudiant_home' %}">Espace Étudiant</a>
+        {% elif user.profile_type == 'professeur' %}
+          <a href="{% url 'prof_home' %}">Espace Prof</a>
+        {% endif %}
+        <form action="{% url 'logout' %}" method="post" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit">Déconnexion</button>
+        </form>
+      {% else %}
+        <a href="{% url 'login' %}">Connexion</a>
+        <a href="{% url 'inscription' %}">Inscription</a>
+      {% endif %}
+    </nav>
+    <hr>
+  </header>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <hr>
+    <p style="text-align: center;">&copy; {{ now|date:"Y" }} Forum UCC – Tous droits réservés</p>
+  </footer>
+</body>
+</html>

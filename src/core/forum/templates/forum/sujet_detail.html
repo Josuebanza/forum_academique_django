@@ -1,0 +1,60 @@
+{% extends 'forum/base.html' %}
+{% block content %}
+  <h2>{{ sujet.titre }}h2>
+  <p>Date limite : {{ sujet.date_creation|date:"d/m/Y H:i" }}</p>
+
+  <hr>
+  <h3>Poster une contribution</h3>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ c_form.as_p }}
+    <button name="c-submit">Envoyer</button>
+  </form>
+
+  <hr>
+  <h3>Contributions</h3>
+  {% for c in contribs %}
+    <div style="border:1px solid #ccc; padding:8px; margin-bottom:8px;">
+      <p><strong>{{ c.etudiant.get_full_name }}</strong> — {{ c.type_contrib }} — {{ c.created_at|date:"d/m H:i" }}</p>
+      {% if c.type_contrib == 'TEXT' %}
+        <p>{{ c.contenu }}</p>
+      {% else %}
+        <p><a href="{{ c.fichier.url }}">Télécharger la pièce jointe</a></p>
+      {% endif %}
+      <p>👍 {{ c.likes }}  👎 {{ c.dislikes }}</p>
+
+      <!-- bouton réaction rapide -->
+      <form method="post" action="{% url 'react' c.id %}" style="display:inline;">
+        {% csrf_token %}
+        {% if user.is_authenticated %}
+          <button type="submit" name="reaction" value="LIKE"
+            class="{% if user in c.reaction_set.filter(type_reaction='LIKE').values_list('utilisateur', flat=True) %}active{% endif %}">
+            👍 {{ c.likes }}
+          </button>
+          <button type="submit" name="reaction" value="DISLIKE"
+            class="{% if user in c.reaction_set.filter(type_reaction='DISLIKE').values_list('utilisateur', flat=True) %}active{% endif %}">
+            👎 {{ c.dislikes }}
+          </button>
+        {% endif %}
+      </form>
+
+
+      <!-- commentaires -->
+      <h4>Commentaires</h4>
+      {% for cm in c.commentaire_set.all %}
+        <p>{{ cm.etudiant.get_full_name }} : {{ cm.contenu_com }}</p>
+      {% empty %}
+        <p>Aucun commentaire.</p>
+      {% endfor %}
+
+      <form method="post">
+        {% csrf_token %}
+        {{ cm_form.as_p }}
+        <input type="hidden" name="contrib_id" value="{{ c.id }}">
+        <button name="cm-submit">Commenter</button>
+      </form>
+    </div>
+  {% empty %}
+    <p>Aucune contribution.</p>
+  {% endfor %}
+{% endblock %}

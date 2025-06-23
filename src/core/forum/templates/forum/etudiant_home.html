@@ -1,0 +1,39 @@
+{% extends 'forum/base.html' %}
+{% block content %}
+  <h2>Bienvenue, {{ user.first_name }}</h2>
+
+  <form method="get" style="margin-bottom:1em;">
+    <input type="text" name="q" placeholder="Recherche…" value="{{ q }}">
+    <button type="submit">🔍</button>
+  </form>
+
+  <section>
+    <h3>Travaux Pratiques</h3>
+    <ul>
+      {% for tp in travaux %}
+        <li>{{ tp.titre_tp }} — {{ tp.date_limit|date:"d/m/Y" }}</li>
+      {% empty %}
+        <li>Aucun travail.</li>
+      {% endfor %}
+    </ul>
+    {% include 'forum/pagination.html' with page_obj=travaux request=request page_param='page_tp' %}
+  </section>
+
+  <section>
+    <h3>Sujets de Discussion</h3>
+    <ul>
+      {% for s in sujets %}
+        <li>{{ s.titre }}</li>
+      {% empty %}
+        <li>Aucun sujet.</li>
+      {% endfor %}
+    </ul>
+    {% include 'forum/pagination.html' with page_obj=sujets request=request page_param='page_sujet' %}
+  </section>
+{% endblock %}
+{% block scripts %}
+  <script>
+    // Vous pouvez ajouter des scripts JavaScript spécifiques à cette page ici
+    console.log("Tableau de bord de l'étudiant chargé.");
+  </script>
+{% endblock %}

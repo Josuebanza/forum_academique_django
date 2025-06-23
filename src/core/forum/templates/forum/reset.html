@@ -1,0 +1,12 @@
+{% extends 'forum/base.html' %}
+{% block content %}
+  <div style="max-width: 400px; margin: auto;">
+    <h2>Réinitialiser le mot de passe</h2>
+    <p>Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.</p>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">Envoyer le lien</button>
+    </form>
+  </div>
+{% endblock %}

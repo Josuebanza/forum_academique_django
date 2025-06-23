@@ -1,0 +1,51 @@
+{% extends 'forum/base.html' %}
+{% block content %}
+  <h2>Tableau de bord Professeur {{ user.last_name }}</h2>
+
+  <form method="get" style="margin-bottom:1em;">
+    <input type="text" name="q" placeholder="Recherche…" value="{{ q }}">
+    <button type="submit">🔍</button>
+  </form>
+
+  <section>
+    <h3>Travaux à corriger</h3>
+    <ul>
+      {% for tp in travaux %}
+        <li>{{ tp.titre_tp }}</li>
+      {% empty %}
+        <li>Aucun travail.</li>
+      {% endfor %}
+    </ul>
+    {% include 'forum/pagination.html' with page_obj=travaux request=request page_param='page_tp' %}
+  </section>
+
+  <section>
+    <h3>Groupes de travail</h3>
+    <ul>
+      {% for g in groupes %}
+        <li>{{ g.nom_groupe }}</li>
+      {% empty %}
+        <li>Aucun groupe.</li>
+      {% endfor %}
+    </ul>
+    {% include 'main/pagination.html' with page_obj=groupes request=request page_param='page_grp' %}
+  </section>
+
+  <section>
+    <h3>Rapports soumis</h3>
+    <ul>
+      {% for r in rapports %}
+        <li>Groupe {{ r.groupe.nom_groupe }} — {{ r.date_soumission|date:"d/m/Y" }}</li>
+      {% empty %}
+        <li>Aucun rapport.</li>
+      {% endfor %}
+    </ul>
+    {% include 'main/pagination.html' with page_obj=rapports request=request page_param='page_rp' %}
+  </section>
+{% endblock %}
+{% block scripts %}
+  <script>
+    // Vous pouvez ajouter des scripts JavaScript spécifiques à cette page ici
+    console.log("Tableau de bord du professeur chargé.");
+  </script>
+{% endblock %}

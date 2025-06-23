@@ -1,0 +1,9 @@
+{% extends 'forum/base.html' %}
+{% block content %}
+  <h2>Proposer un nouveau sujet de discussion</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Publier</button>
+  </form>
+{% endblock %}

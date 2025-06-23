@@ -1,0 +1,33 @@
+<nav aria-label="Pagination">
+  <ul style="list-style:none; display:flex; gap:0.5em; padding:0;">
+    {% if page_obj.has_previous %}
+      <li><a href="?{% with request.GET.urlencode|replace:page_param|stringformat:""|slice:":0" as base %}{{ base }}&{{ page_param }}={{ page_obj.previous_page_number }}{% endwith %}">« Précédent</a></li>
+    {% endif %}
+    <li>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</li>
+    {% if page_obj.has_next %}
+      <li><a href="?{% with request.GET.urlencode|replace:page_param|stringformat:""|slice:":0" as base %}{{ base }}&{{ page_param }}={{ page_obj.next_page_number }}{% endwith %}">Suivant »</a></li>
+    {% endif %}
+  </ul>
+</nav>
+
+<!-- Pagination Template -->
+
+{% if page_obj %}
+{% if page_obj.paginator.num_pages > 1 %}
+  {% with page_param=page_param|default:"page" %}
+{% if page_obj.paginator.num_pages > 1 %}
+  <nav aria-label="Pagination">
+    <ul style="list-style:none; display:flex; gap:0.5em; padding:0;">
+      {% if page_obj.has_previous %}
+        <li><a href="?{% with request.GET.urlencode|replace:page_param|stringformat:""|slice:":0" as base %}{{ base }}&{{ page_param }}={{ page_obj.previous_page_number }}{% endwith %}">« Précédent</a></li>
+      {% endif %}
+      <li>Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</li>
+      {% if page_obj.has_next %}
+        <li><a href="?{% with request.GET.urlencode|replace:page_param|stringformat:""|slice:":0" as base %}{{ base }}&{{ page_param }}={{ page_obj.next_page_number }}{% endwith %}">Suivant »</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}
+{% else %}
+  <p>Aucune pagination disponible.</p>
+{% endif %}

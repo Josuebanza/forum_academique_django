@@ -1,0 +1,214 @@
+{% extends 'forum/base.html' %}
+{% load static %}
+{% load pagination_tags %} {# Pour la pagination #}
+
+{% block title %}Forum: {{ travail.titre_tp }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-6 bg-gray-100 min-h-screen">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-4">Forum pour : <span class="text-indigo-700">{{ travail.titre_tp }}</span></h1>
+
+    {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+                <div class="p-4 rounded-md text-sm {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="flex flex-col lg:flex-row gap-6">
+        {# Colonne principale: Contributions #}
+        <div class="lg:w-3/4 bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-5 border-b pb-3">Contributions</h2>
+
+            {# Filtre de tri #}
+            <div class="mb-6 flex items-center justify-end gap-2 text-sm text-gray-600">
+                Trier par:
+                <a href="?sort=date_post{% if page_obj.number %}&&page={{ page_obj.number }}{% endif %}" class="px-3 py-1 rounded-md {% if sort_by == 'date_post' %}bg-indigo-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">Date</a>
+                <a href="?sort=likes{% if page_obj.number %}&&page={{ page_obj.number }}{% endif %}" class="px-3 py-1 rounded-md {% if sort_by == 'likes' %}bg-indigo-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">J'aime</a>
+                <a href="?sort=dislikes{% if page_obj.number %}&&page={{ page_obj.number }}{% endif %}" class="px-3 py-1 rounded-md {% if sort_by == 'dislikes' %}bg-indigo-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">Je n'aime pas</a>
+                <a href="?sort=comments{% if page_obj.number %}&&page={{ page_obj.number }}{% endif %}" class="px-3 py-1 rounded-md {% if sort_by == 'comments' %}bg-indigo-600 text-white{% else %}bg-gray-200 hover:bg-gray-300{% endif %}">Commentaires</a>
+            </div>
+
+            {% if contributions %}
+                <div class="space-y-6">
+                    {% for contrib in page_obj %} {# Itérer sur l'objet paginé #}
+                        <div class="border border-gray-200 rounded-lg p-5 bg-gray-50 shadow-sm">
+                            <p class="text-sm text-gray-500 mb-2">
+                                Par <span class="font-semibold text-gray-700">{{ contrib.auteur.user.first_name }} {{ contrib.auteur.user.last_name }}</span>
+                                le {{ contrib.date_post|date:"d M Y H:i" }}
+                            </p>
+                            <div class="text-gray-800 text-base leading-relaxed mb-4">
+                                {% if contrib.type_contrib == 'texte' %}
+                                    <p>{{ contrib.contenu|linebreaksbr }}</p>
+                                {% elif contrib.type_contrib == 'fichier' %}
+                                    <p class="mb-2">Fichier joint:</p>
+                                    <a href="{{ contrib.fichier.url }}" target="_blank" class="text-blue-600 hover:underline flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.414L14.586 5A2 2 0 0115 6.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        Télécharger le fichier
+                                    </a>
+                                {% endif %}
+                            </div>
+
+                            <div class="flex items-center space-x-4 text-sm text-gray-600">
+                                {# Section J'aime / Je n'aime pas #}
+                                <div class="flex items-center space-x-1">
+                                    <a href="{% url 'react_to_contribution' contribution_id=contrib.id reaction_type='like' %}" class="flex items-center text-green-600 hover:text-green-800">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-2 0a6 6 0 11-12 0 6 6 0 0112 0z" clip-rule="evenodd" />
+                                        </svg>
+                                        <span>{{ contrib.num_likes }}</span>
+                                    </a>
+                                    <a href="{% url 'react_to_contribution' contribution_id=contrib.id reaction_type='dislike' %}" class="flex items-center text-red-600 hover:text-red-800">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                                        </svg>
+                                        <span>{{ contrib.num_dislikes }}</span>
+                                    </a>
+                                </div>
+                                
+                                {# Lien vers les commentaires #}
+                                <a href="{% url 'commentaire_detail_view' contribution_id=contrib.id %}" class="text-blue-600 hover:underline flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M18 13.5V16a2 2 0 01-2 2h-4.586a2 2 0 01-1.414-.586l-2.062-2.062a2 2 0 00-1.414-.586H4a2 2 0 01-2-2V7.5a2 2 0 012-2h12a2 2 0 012 2v6z" clip-rule="evenodd" />
+                                    </svg>
+                                    Commentaires ({{ contrib.num_commentaires }})
+                                </a>
+
+                                {# Bouton pour révéler la zone de commentaire #}
+                                <button type="button" 
+                                        class="toggle-comment-form text-indigo-600 hover:underline ml-auto flex items-center" 
+                                        data-contribution-id="{{ contrib.id }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M7.707 3.293a1 1 0 010 1.414L5.414 7H14a1 1 0 110 2H5.414l2.293 2.293a1 1 0 11-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                    Répondre
+                                </button>
+                            </div>
+
+                            {# Zone de texte pour commentaire (initialement cachée) #}
+                            <div id="comment-form-{{ contrib.id }}" class="comment-form-container mt-4 p-4 bg-white border border-gray-300 rounded-md hidden">
+                                <form method="post" action="{% url 'commentaire_detail_view' contribution_id=contrib.id %}" class="space-y-3">
+                                    {% csrf_token %}
+                                    <div>
+                                        {{ comment_form.contenu_com.label_tag }}
+                                        {{ comment_form.contenu_com }}
+                                        {% if comment_form.contenu_com.errors %}
+                                            <p class="text-red-500 text-xs italic">{{ comment_form.contenu_com.errors }}</p>
+                                        {% endif %}
+                                    </div>
+                                    <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors duration-200 text-sm">
+                                        Ajouter un commentaire
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                {# Pagination pour les contributions #}
+                {% include 'forum/pagination.html' with page_obj=page_obj page_param=page_param %}
+
+            {% else %}
+                <p class="text-gray-600 text-center py-8">Aucune contribution trouvée pour ce travail.</p>
+            {% endif %}
+
+            {# Zone pour ajouter une nouvelle contribution (fixée en bas, dépliante) #}
+            <div id="new-contribution-section" class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-300 shadow-xl p-6 transform translate-y-full transition-transform duration-300 z-50">
+                <button type="button" id="toggle-new-contribution" class="absolute top-[-40px] right-6 bg-indigo-600 text-white px-4 py-2 rounded-t-md hover:bg-indigo-700 transition-colors duration-200">
+                    Nouvelle Contribution
+                </button>
+                <button type="button" id="close-new-contribution" class="absolute top-2 right-6 text-gray-500 hover:text-gray-800 text-xl font-bold">
+                    &times;
+                </button>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Ajouter une Nouvelle Contribution</h2>
+                <form method="post" enctype="multipart/form-data" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        {{ contribution_form.type_contrib.label_tag }}
+                        {{ contribution_form.type_contrib }}
+                        {% if contribution_form.type_contrib.errors %}<p class="text-red-500 text-xs italic">{{ contribution_form.type_contrib.errors }}</p>{% endif %}
+                    </div>
+                    <div>
+                        {{ contribution_form.contenu.label_tag }}
+                        {{ contribution_form.contenu }}
+                        {% if contribution_form.contenu.errors %}<p class="text-red-500 text-xs italic">{{ contribution_form.contenu.errors }}</p>{% endif %}
+                    </div>
+                    <div>
+                        {{ contribution_form.fichier.label_tag }}
+                        {{ contribution_form.fichier }}
+                        {% if contribution_form.fichier.errors %}<p class="text-red-500 text-xs italic">{{ contribution_form.fichier.errors }}</p>{% endif %}
+                    </div>
+                    <button type="submit" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:shadow-outline transition-colors duration-200">
+                        Poster la Contribution
+                    </button>
+                </form>
+            </div>
+
+        </div>
+
+        {# Colonne latérale: Infos Travail et Infos Étudiant (25%) #}
+        <div class="lg:w-1/4 flex flex-col gap-6">
+            {# Informations sur le Travail #}
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Détails du Travail</h2>
+                <p class="text-gray-700 mb-2">Cours: <span class="font-semibold">{{ travail.id_cours.titre_cours }}</span></p>
+                <p class="text-gray-700 mb-2">Promotion: <span class="font-semibold">{{ travail.id_promotion.nom_promo }}</span></p>
+                <p class="text-gray-700 mb-2">Date limite: <span class="font-semibold">{{ travail.date_limit|date:"d M Y H:i" }}</span></p>
+                <a href="{% url 'joindre_groupe' travail_id=travail.id %}" class="text-indigo-600 hover:underline text-sm">Retour à la gestion des groupes</a>
+            </div>
+
+            {# Informations sur l'Étudiant #}
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Mon Profil Étudiant</h2>
+                <p class="text-gray-700 mb-2">Matricule: <span class="font-semibold">{{ etudiant.matricule }}</span></p>
+                <p class="text-gray-700 mb-2">Faculté: <span class="font-semibold">{{ etudiant.id_faculte.nom_fac|default:"Non renseignée" }}</span></p>
+                <p class="text-gray-700 mb-2">Promotion: <span class="font-semibold">{{ etudiant.id_promotion.nom_promo|default:"Non renseignée" }}</span></p>
+                <a href="{% url 'etudiant_dashboard' %}" class="text-indigo-600 hover:underline text-sm">Gérer mon profil</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle comment form
+        document.querySelectorAll('.toggle-comment-form').forEach(button => {
+            button.addEventListener('click', function() {
+                const contributionId = this.dataset.contributionId;
+                const commentForm = document.getElementById(`comment-form-${contributionId}`);
+                commentForm.classList.toggle('hidden');
+            });
+        });
+
+        // Toggle new contribution section
+        const newContributionSection = document.getElementById('new-contribution-section');
+        const toggleNewContributionButton = document.getElementById('toggle-new-contribution');
+        const closeNewContributionButton = document.getElementById('close-new-contribution');
+
+        toggleNewContributionButton.addEventListener('click', function() {
+            newContributionSection.classList.remove('translate-y-full');
+            newContributionSection.classList.add('translate-y-0');
+        });
+
+        closeNewContributionButton.addEventListener('click', function() {
+            newContributionSection.classList.remove('translate-y-0');
+            newContributionSection.classList.add('translate-y-full');
+        });
+    });
+</script>
+{% endblock %}
+
+
+{% block extra_js %}
+  <script>
+    // On passe l’ID du travail au script
+    const TRAVAIL_ID = {{ travail.id }};
+  </script>
+  <script src="{% static 'js/updates.js' %}"></script>
+{% endblock %}

@@ -28,7 +28,7 @@
         <li>Aucun groupe.</li>
       {% endfor %}
     </ul>
-    {% include 'main/pagination.html' with page_obj=groupes request=request page_param='page_grp' %}
+    {% include 'forum/pagination.html' with page_obj=groupes request=request page_param='page_grp' %}
   </section>
 
   <section>
@@ -40,7 +40,7 @@
         <li>Aucun rapport.</li>
       {% endfor %}
     </ul>
-    {% include 'main/pagination.html' with page_obj=rapports request=request page_param='page_rp' %}
+    {% include 'forum/pagination.html' with page_obj=rapports request=request page_param='page_rp' %}
   </section>
 {% endblock %}
 {% block scripts %}

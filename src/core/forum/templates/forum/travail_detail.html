@@ -58,3 +58,11 @@
     <p>Aucune contribution.</p>
   {% endfor %}
 {% endblock %}
+
+{% block extra_js %}
+  <script>
+    // On passe l’ID du travail au script
+    const TRAVAIL_ID = {{ travail.id }};
+  </script>
+  <script src="{% static 'js/updates.js' %}"></script>
+{% endblock %}

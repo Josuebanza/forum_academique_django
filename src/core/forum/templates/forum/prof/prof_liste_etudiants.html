@@ -1,0 +1,97 @@
+{% extends 'forum/base.html' %}
+{% load static %}
+
+{% block title %}Liste des Étudiants{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-6 bg-gray-100 min-h-screen">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-4">Liste des Étudiants</h1>
+
+    {# Filtres #}
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Filtrer les Étudiants</h2>
+        <form method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label for="faculte" class="block text-sm font-medium text-gray-700">Faculté:</label>
+                <select name="faculte" id="faculte" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    <option value="">Toutes les facultés</option>
+                    {% for fac in facultes %}
+                        <option value="{{ fac.id }}" {% if selected_fac == fac.id|stringformat:"d" %}selected{% endif %}>{{ fac.nom_fac }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="promotion" class="block text-sm font-medium text-gray-700">Promotion:</label>
+                <select name="promotion" id="promotion" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    <option value="">Toutes les promotions</option>
+                    {% for promo in promotions %}
+                        <option value="{{ promo.id }}" {% if selected_promo == promo.id|stringformat:"d" %}selected{% endif %}>{{ promo.nom_promo }} ({{ promo.id_faculte.nom_fac }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="cours" class="block text-sm font-medium text-gray-700">Cours (enseigné par vous):</label>
+                <select name="cours" id="cours" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                    <option value="">Tous les cours</option>
+                    {% for cours in cours_enseignes_filter %}
+                        <option value="{{ cours.id }}" {% if selected_cours == cours.id|stringformat:"d" %}selected{% endif %}>{{ cours.titre_cours }} ({{ cours.id_promotion.nom_promo }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-span-1 md:col-span-3 flex justify-end">
+                <button type="submit" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:shadow-outline transition-colors duration-200">
+                    Appliquer les filtres
+                </button>
+                <a href="{% url 'prof_liste_etudiants' %}" class="ml-4 bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-md hover:bg-gray-400 focus:outline-none focus:shadow-outline transition-colors duration-200">
+                    Réinitialiser les filtres
+                </a>
+            </div>
+        </form>
+    </div>
+
+    {# Liste des étudiants #}
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        {% if etudiants %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prénom</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matricule</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculté</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Promotion</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for etudiant in etudiants %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ etudiant.user.last_name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ etudiant.user.first_name }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ etudiant.matricule }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ etudiant.id_faculte.nom_fac|default:"N/A" }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ etudiant.id_promotion.nom_promo|default:"N/A" }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ etudiant.user.email }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {# Pagination #}
+            <div class="flex justify-center items-center mt-6 space-x-2">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}&faculte={{ selected_fac }}&promotion={{ selected_promo }}&cours={{ selected_cours }}" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200">Précédent</a>
+                {% endif %}
+                <span class="text-gray-700">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}&faculte={{ selected_fac }}&promotion={{ selected_promo }}&cours={{ selected_cours }}" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors duration-200">Suivant</a>
+                {% endif %}
+            </div>
+        {% else %}
+            <p class="text-gray-600">Aucun étudiant trouvé avec les filtres appliqués.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

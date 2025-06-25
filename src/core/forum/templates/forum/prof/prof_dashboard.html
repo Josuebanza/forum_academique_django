@@ -1,0 +1,229 @@
+{% extends 'forum/base.html' %}
+{% load static %}
+
+{% block title %}Tableau de Bord Professeur{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-6 bg-gray-100 min-h-screen">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-4">Bienvenue, {{ professeur.user.first_name }} {{ professeur.user.last_name }}</h1>
+
+    {# Affichage des messages (succès, erreur, etc.) #}
+    {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+                <div class="p-4 rounded-md text-sm {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {# Carte Infos Profil #}
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Mon Profil</h2>
+            <div class="flex items-center mb-4">
+                {% if professeur.user.profile_picture %}
+                    <img src="{{ professeur.user.profile_picture.url }}" alt="Photo de profil" class="w-20 h-20 rounded-full mr-4 object-cover">
+                {% else %}
+                    <div class="w-20 h-20 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 text-4xl mr-4">
+                        {# Icône de profil par défaut #}
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                {% endif %}
+                <div>
+                    <p class="text-lg font-semibold">{{ professeur.user.first_name }} {{ professeur.user.last_name }}</p>
+                    <p class="text-sm text-gray-600">{{ professeur.user.email }}</p>
+                    <p class="text-sm text-gray-600">Spécialité: {{ professeur.specialite|default:"Non spécifiée" }}</p>
+                </div>
+            </div>
+            {# Bouton pour afficher/masquer le formulaire de mise à jour du profil #}
+            <button id="toggleProfileForm" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors duration-200 text-sm mt-4">
+                Mettre à jour le profil
+            </button>
+            <div id="profileFormContainer" class="hidden mt-4">
+                <form method="post" enctype="multipart/form-data" class="space-y-4">
+                    {% csrf_token %}
+                    <div>
+                        {{ profile_form.first_name.label_tag }}
+                        {{ profile_form.first_name }}
+                        {% if profile_form.first_name.errors %}<p class="text-red-500 text-xs italic">{{ profile_form.first_name.errors }}</p>{% endif %}
+                    </div>
+                    <div>
+                        {{ profile_form.last_name.label_tag }}
+                        {{ profile_form.last_name }}
+                        {% if profile_form.last_name.errors %}<p class="text-red-500 text-xs italic">{{ profile_form.last_name.errors }}</p>{% endif %}
+                    </div>
+                    <div>
+                        {{ profile_form.email.label_tag }}
+                        {{ profile_form.email }}
+                        {% if profile_form.email.errors %}<p class="text-red-500 text-xs italic">{{ profile_form.email.errors }}</p>{% endif %}
+                    </div>
+                    <div>
+                        {{ profile_form.specialite.label_tag }}
+                        {{ profile_form.specialite }}
+                        {% if profile_form.specialite.errors %}<p class="text-red-500 text-xs italic">{{ profile_form.specialite.errors }}</p>{% endif %}
+                    </div>
+                    <div>
+                        {{ profile_form.profile_picture.label_tag }}
+                        {{ profile_form.profile_picture }}
+                        {% if profile_form.profile_picture.errors %}<p class="text-red-500 text-xs italic">{{ profile_form.profile_picture.errors }}</p>{% endif %}
+                    </div>
+                    <button type="submit" name="update_profile" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:shadow-outline transition-colors duration-200">
+                        Enregistrer les modifications
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {# Carte Actions Rapides #}
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Actions Rapides</h2>
+            <ul class="space-y-3">
+                <li>
+                    <a href="{% url 'prof_creer_travail' %}" class="flex items-center text-indigo-600 hover:text-indigo-800 font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+                        </svg>
+                        Créer un nouveau travail
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'prof_creer_groupe' %}" class="flex items-center text-indigo-600 hover:text-indigo-800 font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.5 17a4.5 4.5 0 01-1.442-8.765l-.014-.007.004-.002A5 5 0 0110 2a5 5 0 014.938 4.795.5.5 0 00.125.148 4.5 4.5 0 01.309 8.243l-.001.002.001.002A5 5 0 0110 18a5 5 0 01-4.938-4.795.5.5 0 00-.125-.148zM10 11a1 1 0 100 2h1a1 1 0 100-2h-1zM7 9a1 1 0 100 2h1a1 1 0 100-2H7zM13 9a1 1 0 100 2h1a1 1 0 100-2h-1z" clip-rule="evenodd" />
+                        </svg>
+                        Créer un nouveau groupe
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'prof_liste_etudiants' %}" class="flex items-center text-indigo-600 hover:text-indigo-800 font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zm-6 4a3 3 0 100 6h6a3 3 0 100-6H7z" />
+                            <path fill-rule="evenodd" d="M12.93 17.29a.75.75 0 00-1.06-.06l-4-4a.75.75 0 00-1.06 1.06l4 4a.75.75 0 001.06-.06z" clip-rule="evenodd" />
+                        </svg>
+                        Voir la liste des étudiants
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        {# Carte "Mes Cours Enseignés" #}
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Mes Cours Enseignés</h2>
+            {% if cours_enseignes %}
+                <ul class="divide-y divide-gray-200">
+                    {% for cours in cours_enseignes %}
+                        <li class="py-3 flex justify-between items-center">
+                            <div>
+                                <p class="font-semibold text-gray-700">{{ cours.titre_cours }}</p>
+                                <p class="text-sm text-gray-500">{{ cours.id_promotion.nom_promo }} ({{ cours.id_promotion.id_faculte.nom_fac }})</p>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-gray-600">Vous n'enseignez aucun cours pour l'instant.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Journal des Travaux Créés #}
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Mes Travaux Créés</h2>
+        <a href="{% url 'prof_creer_travail' %}" class="inline-block bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors duration-200 mb-4">
+            + Créer un nouveau travail
+        </a>
+        {% if travaux_crees %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titre</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cours</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Promotion</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Limite</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for travail in travaux_crees %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ travail.titre_tp }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ travail.id_cours.titre_cours }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ travail.id_promotion.nom_promo }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ travail.date_limit|date:"d M Y H:i" }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="{% url 'prof_voir_travail' travail.id %}" class="text-indigo-600 hover:text-indigo-900 mr-4">Voir / Modifier</a>
+                                    <a href="{% url 'travail_forum_view' travail.id %}" class="text-green-600 hover:text-green-900">Forum</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-600">Vous n'avez pas encore créé de travaux.</p>
+        {% endif %}
+    </div>
+
+    {# Groupes de Travail Gérés #}
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Mes Groupes de Travail</h2>
+        <a href="{% url 'prof_creer_groupe' %}" class="inline-block bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors duration-200 mb-4">
+            + Créer un nouveau groupe
+        </a>
+        {% if groupes_geres %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom du Groupe</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Travail Associé</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Membres</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for groupe in groupes_geres %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ groupe.nom_groupe }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ groupe.id_travail.titre_tp }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ groupe.nb_membres }}/{{ groupe.capacite_max }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ groupe.get_statut_groupe_display }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <a href="{% url 'prof_gerer_groupe' groupe.id %}" class="text-indigo-600 hover:text-indigo-900">Gérer le groupe</a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-600">Vous n'avez pas encore créé de groupes de travail.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // Script pour afficher/masquer le formulaire de mise à jour du profil
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleButton = document.getElementById('toggleProfileForm');
+        const formContainer = document.getElementById('profileFormContainer');
+
+        if (toggleButton && formContainer) {
+            toggleButton.addEventListener('click', function() {
+                formContainer.classList.toggle('hidden');
+                if (formContainer.classList.contains('hidden')) {
+                    toggleButton.textContent = 'Mettre à jour le profil';
+                } else {
+                    toggleButton.textContent = 'Masquer le formulaire';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

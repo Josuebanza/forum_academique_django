@@ -1,0 +1,84 @@
+{% extends 'forum/base.html' %}
+{% load static %}
+
+{% block title %}Gérer le Groupe: {{ groupe.nom_groupe }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-6 bg-gray-100 min-h-screen">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-4">Gérer le Groupe: {{ groupe.nom_groupe }}</h1>
+
+    {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+                <div class="p-4 rounded-md text-sm {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Informations sur le Groupe</h2>
+        <p class="text-gray-700 mb-2"><span class="font-semibold">Travail associé:</span> {{ groupe.id_travail.titre_tp }}</p>
+        <p class="text-gray-700 mb-2"><span class="font-semibold">Promotion:</span> {{ groupe.id_travail.id_promotion.nom_promo }}</p>
+        <p class="text-gray-700 mb-2"><span class="font-semibold">Statut:</span> {{ groupe.get_statut_groupe_display }}</p>
+        <p class="text-gray-700 mb-4"><span class="font-semibold">Capacité:</span> {{ membres_actuels.count }}/{{ groupe.capacite_max }} membres</p>
+
+        <a href="{% url 'prof_dashboard' %}" class="inline-block bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors duration-200 mt-4">
+            Retour au Tableau de Bord
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {# Section Membres Actuels #}
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Membres Actuels</h2>
+            {% if membres_actuels %}
+                <ul class="divide-y divide-gray-200">
+                    {% for membre in membres_actuels %}
+                        <li class="py-3 flex justify-between items-center">
+                            <div>
+                                <p class="font-semibold text-gray-700">{{ membre.etudiant.user.first_name }} {{ membre.etudiant.user.last_name }}</p>
+                                <p class="text-sm text-gray-500">Matricule: {{ membre.etudiant.matricule }}</p>
+                            </div>
+                            <form method="post" action="{% url 'prof_gerer_groupe' groupe.id %}" class="inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="etudiant_id_to_remove" value="{{ membre.etudiant.id }}">
+                                <button type="submit" name="remove_student" class="bg-red-500 text-white px-3 py-1 rounded-md text-sm hover:bg-red-600 transition-colors duration-200">
+                                    Retirer
+                                </button>
+                            </form>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="text-gray-600">Aucun étudiant dans ce groupe pour l'instant.</p>
+            {% endif %}
+        </div>
+
+        {# Section Ajouter un Étudiant #}
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Ajouter un Étudiant</h2>
+            {% if groupe.get_members_count < groupe.capacite_max %}
+                {% if add_student_form.etudiant.field.queryset.exists %}
+                    <form method="post" action="{% url 'prof_gerer_groupe' groupe.id %}" class="space-y-4">
+                        {% csrf_token %}
+                        <div>
+                            {{ add_student_form.etudiant.label_tag }}
+                            {{ add_student_form.etudiant }}
+                            {% if add_student_form.etudiant.errors %}<p class="text-red-500 text-xs italic">{{ add_student_form.etudiant.errors }}</p>{% endif %}
+                        </div>
+                        <button type="submit" name="add_student" class="bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:shadow-outline transition-colors duration-200">
+                            Ajouter l'étudiant
+                        </button>
+                    </form>
+                {% else %}
+                    <p class="text-gray-600">Aucun étudiant disponible à ajouter (soit la capacité maximale est atteinte, soit tous les étudiants de la promotion sont déjà membres).</p>
+                {% endif %}
+            {% else %}
+                <p class="text-red-600 font-semibold">Ce groupe a atteint sa capacité maximale ({{ groupe.capacite_max }} membres).</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

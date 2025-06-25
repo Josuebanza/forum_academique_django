@@ -20,15 +20,15 @@
   </section>
 
   <section>
-    <h3>Sujets de Discussion</h3>
+    <h3>contributions</h3>
     <ul>
-      {% for s in sujets %}
-        <li>{{ s.titre }}</li>
+      {% for c in contribs %}
+        <li>{{ c.id }}</li>
       {% empty %}
         <li>Aucun sujet.</li>
       {% endfor %}
     </ul>
-    {% include 'forum/pagination.html' with page_obj=sujets request=request page_param='page_sujet' %}
+    {% include 'forum/pagination.html' with page_obj=contribs request=request page_param='page_contrib' %}
   </section>
 {% endblock %}
 {% block scripts %}

@@ -1,41 +1,71 @@
+{# forum/templates/forum/base.html #}
 {% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>{% block title %}Forum Académique{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {# Le titre est conservé de votre base.html original #}
+    <title>{% block title %}Forum Académique{% endblock %}</title>
+
+    {# Intégration du Play CDN de Tailwind CSS (votre ajout) #}
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    {# Votre fichier CSS personnalisé (style.css) est inclus APRÈS Tailwind pour permettre les surcharges #}
+    <link rel="stylesheet" href="{% static '/css/style.css' %}">
 </head>
-<body>
-  <header>
-    <h1>Forum Académique de l’UCC</h1>
-    <nav>
-      {% if user.is_authenticated %}
-        <a href="{% url 'dashboard' %}">Accueil</a>
-        {% if user.profile_type == 'etudiant' %}
-          <a href="{% url 'etudiant_home' %}">Espace Étudiant</a>
-        {% elif user.profile_type == 'professeur' %}
-          <a href="{% url 'prof_home' %}">Espace Prof</a>
-        {% endif %}
-        <form action="{% url 'logout' %}" method="post" style="display:inline;">
-          {% csrf_token %}
-          <button type="submit">Déconnexion</button>
-        </form>
-      {% else %}
-        <a href="{% url 'login' %}">Connexion</a>
-        <a href="{% url 'inscription' %}">Inscription</a>
-      {% endif %}
-    </nav>
-    <hr>
-  </header>
+{# Le body utilise les classes Tailwind pour le fond et la police #}
+<body class="bg-gray-100 font-sans antialiased">
+    {# En-tête avec la barre de navigation, stylisé avec Tailwind #}
+    <header class="bg-indigo-600 p-4 text-white shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Forum Académique de l’UCC</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'dashboard' %}" class="hover:text-indigo-200">Accueil</a></li>
+                        {% if user.profile_type == 'etudiant' %}
+                            <li><a href="{% url 'etudiant_dashboard' %}" class="hover:text-indigo-200">Espace Étudiant</a></li>
+                        {% elif user.profile_type == 'professeur' %}
+                            <li><a href="{% url 'prof_home' %}" class="hover:text-indigo-200">Espace Prof</a></li>
+                        {% endif %}
+                        <li>
+                            <form action="{% url 'logout' %}" method="post" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="bg-indigo-700 hover:bg-indigo-800 px-4 py-2 rounded-md transition duration-300">Déconnexion</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li><a href="{% url 'login' %}" class="bg-indigo-700 hover:bg-indigo-800 px-4 py-2 rounded-md transition duration-300">Connexion</a></li>
+                        <li><a href="{% url 'inscription' %}" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-md ml-2 transition duration-300">Inscription</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {# La ligne horizontale est retirée ici car la barre de navigation Tailwind a déjà une séparation visuelle #}
+    </header>
 
-  <main>
-    {% block content %}{% endblock %}
-  </main>
+    <main class="container mx-auto p-6"> {# Ajout de padding et centrage avec Tailwind #}
+        {% block content %}{% endblock %}
+    </main>
 
-  <footer>
-    <hr>
-    <p style="text-align: center;">&copy; {{ now|date:"Y" }} Forum UCC – Tous droits réservés</p>
-  </footer>
+    {# Pied de page stylisé avec Tailwind #}
+    <footer class="bg-gradient-to-r from-indigo-700 via-indigo-800 to-indigo-900 text-white text-center py-6 mt-16 shadow-inner rounded-t-lg">
+        <div class="flex flex-col items-center space-y-2">
+            <p class="text-lg font-semibold tracking-wide">
+                &copy; {% if now %}{{ now|date:"Y" }}{% else %}2025{% endif %} Forum UCC – Tous droits réservés
+            </p>
+            <div class="flex space-x-4 text-indigo-300">
+                <a href="#" class="hover:text-white transition">À propos</a>
+                <span>|</span>
+                <a href="#" class="hover:text-white transition">Contact</a>
+                <span>|</span>
+                <a href="#" class="hover:text-white transition">Mentions légales</a>
+            </div>
+        </div>
+    </footer>
+{% block extra_js %}
+    
+{% endblock %}
 </body>
 </html>

@@ -1,0 +1,110 @@
+{% extends 'forum/base.html' %}
+{% load static %}
+
+{% block title %}Commentaires pour {{ contribution.id_travail.titre_tp }}{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-6 bg-gray-100 min-h-screen">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-4">Commentaires pour la contribution</h1>
+
+    {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+                <div class="p-4 rounded-md text-sm {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {# Section de la contribution commentée (sous forme de citation) #}
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8 border-l-4 border-indigo-500">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Contribution Originale</h2>
+        <p class="text-sm text-gray-500 mb-2">
+            Par <span class="font-semibold text-gray-700">{{ contribution.auteur.user.first_name }} {{ contribution.auteur.user.last_name }}</span>
+            le {{ contribution.date_post|date:"d M Y H:i" }}
+        </p>
+        <blockquote class="text-gray-800 text-base italic pl-4 border-l-2 border-gray-300">
+            {% if contribution.type_contrib == 'texte' %}
+                <p>{{ contribution.contenu|linebreaksbr }}</p>
+            {% elif contribution.type_contrib == 'fichier' %}
+                <p class="mb-2">Fichier joint:</p>
+                <a href="{{ contribution.fichier.url }}" target="_blank" class="text-blue-600 hover:underline flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.414L14.586 5A2 2 0 0115 6.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    Télécharger le fichier
+                </a>
+            {% endif %}
+        </blockquote>
+         <div class="flex items-center space-x-4 text-sm text-gray-600 mt-4">
+            {# Boutons de réaction #}
+            <a href="{% url 'react_to_contribution' contribution_id=contribution.id reaction_type='like' %}" class="flex items-center {% if user_reaction and user_reaction.type_reaction == 'like' %}text-indigo-600{% else %}text-gray-600{% endif %} hover:text-indigo-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-2 0a6 6 0 11-12 0 6 6 0 0112 0z" clip-rule="evenodd" />
+                </svg>
+                <span>J'aime</span>
+            </a>
+            <a href="{% url 'react_to_contribution' contribution_id=contribution.id reaction_type='dislike' %}" class="flex items-center {% if user_reaction and user_reaction.type_reaction == 'dislike' %}text-red-600{% else %}text-gray-600{% endif %} hover:text-red-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                </svg>
+                <span>Je n'aime pas</span>
+            </a>
+        </div>
+    </div>
+
+    {# Section des commentaires #}
+    <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Commentaires ({{ commentaires.count }})</h2>
+    <div class="space-y-6 mb-8">
+        {% if commentaires %}
+            {% for comment in commentaires %}
+                <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-200">
+                    <p class="text-sm text-gray-500 mb-2">
+                        Par <span class="font-semibold text-gray-700">{{ comment.auteur.user.first_name }} {{ comment.auteur.user.last_name }}</span>
+                        le {{ comment.date_com|date:"d M Y H:i" }}
+                    </p>
+                    <p class="text-gray-800 text-base leading-relaxed">
+                        {{ comment.contenu_com|linebreaksbr }}
+                    </p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-gray-600 text-center py-4">Aucun commentaire pour cette contribution pour le moment.</p>
+        {% endif %}
+    </div>
+
+    {# Zone pour ajouter un nouveau commentaire #}
+    <div class="bg-white rounded-lg shadow-lg p-6 sticky bottom-0 border-t border-gray-300">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Ajouter un Commentaire</h2>
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                {{ comment_form.contenu_com.label_tag }}
+                {{ comment_form.contenu_com }}
+                {% if comment_form.contenu_com.errors %}
+                    <p class="text-red-500 text-xs italic">{{ comment_form.contenu_com.errors }}</p>
+                {% endif %}
+            </div>
+            <button type="submit" class="bg-indigo-600 text-white font-bold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:shadow-outline transition-colors duration-200">
+                Ajouter le Commentaire
+            </button>
+        </form>
+    </div>
+
+    <div class="mt-8 text-center">
+        <a href="{% url 'travail_forum_view' travail_id=contribution.id_travail.id %}" class="text-indigo-600 hover:underline">
+            Retour au Forum du Travail
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    // On passe l’ID du travail au script
+    const TRAVAIL_ID = {{ travail.id }};
+  </script>
+  <script src="{% static 'js/updates.js' %}"></script>
+{% endblock %}

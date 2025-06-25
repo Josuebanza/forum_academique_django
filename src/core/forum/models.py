@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import (
     AbstractBaseUser, PermissionsMixin, BaseUserManager
 )
+from django.forms import ValidationError
 
 class UserManager(BaseUserManager):
     def _create_user(self, email, password, profile_type, **extra_fields):
@@ -39,7 +40,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField('Adresse e-mail', unique=True)
     first_name = models.CharField('Prénom', max_length=30, blank=True)
     last_name  = models.CharField('Nom',     max_length=30, blank=True)
-    #date_naissance = models.DateField("date de naissance",blank=True)
+    profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True, default='default_profile_pic.jpg')
+
     profile_type = models.CharField(
         'Type de profil',
         max_length=20,
@@ -64,7 +66,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return f"{self.email} ({self.get_profile_type_display()})"
-
+    
     # Méthodes d’accès rapide
     def is_etudiant(self):
         return self.profile_type == 'etudiant'
@@ -74,6 +76,17 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def is_admin(self):
         return self.profile_type == 'admin' or self.is_superuser
+    
+    # Propriété pour accéder au profil associé
+    @property
+    def profile(self):
+        if self.profile_type == 'etudiant':
+            return getattr(self, 'etudiant_profile', None)
+        elif self.profile_type == 'professeur':
+            return getattr(self, 'prof_profile', None)
+        return None
+
+    
 
 
 
@@ -101,7 +114,7 @@ class Professeur(models.Model):
         related_name='prof_profile'
     )
     statut  = models.CharField(max_length=50)
-    #email = models.EmailField("Email professionnel", unique=True, null=True, blank=True)
+    specialite = models.CharField('spécialité',max_length=100, blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name} ({self.statut})"
@@ -110,7 +123,9 @@ class Professeur(models.Model):
 class Cours(models.Model):
     titre_cours     = models.CharField(max_length=100)
     code_cours      = models.CharField(max_length=20, unique=True)
-    id_professeur = models.ForeignKey(Professeur, on_delete=models.PROTECT, related_name='cours')
+    id_professeur = models.ManyToManyField(Professeur, related_name='cours_enseignes')
+    id_promotion  = models.ForeignKey(Promotion, on_delete=models.CASCADE, related_name='cours', null=True, blank=True)
+    description   = models.TextField("Description du cours", blank=True, null=True, default='')
 
     def __str__(self):
         return f"{self.code_cours} – {self.titre_cours}"
@@ -118,21 +133,37 @@ class Cours(models.Model):
 
 class Travail(models.Model):
     titre_tp      = models.CharField("Titre du TP", max_length=200)
-    date_limit = models.DateTimeField("Date limite")
+    date_limit    = models.DateTimeField("Date limite")
+    date_post     = models.DateField('date de publication', default=datetime.date.today)
+    id_promo      = models.ForeignKey(Promotion, on_delete=models.CASCADE, related_name='travaux', null=True, blank=True,  default=1)
     id_cours      = models.ForeignKey(Cours, on_delete=models.CASCADE, related_name='travaux')
-    description = models.TextField("Description du TP", blank=True, null=True, default='')
+    description   = models.TextField("Description du TP", blank=True, null=True, default='')
+    auteur = models.ForeignKey("Professeur", on_delete=models.CASCADE, related_name='travaux_crees', null=True, blank=True)
 
     def __str__(self):
-        return self.titre_tp
+        return f" {self.titre_tp} ({self.id_cours.titre_cours} publié le {self.date_post})"
 
 
 class GroupeDeTravail(models.Model):
-    nom_groupe     = models.CharField(max_length=100)
-    statut_groupe  = models.CharField(max_length=50)
+    STATUT_CHOICES = (
+        ('ouvert', 'Ouvert'),
+        ('ferme', 'Fermé'),
+        ('en_attente', 'En attente'),
+        ('pret', 'Prêt'),
+    )
+    nom_groupe = models.CharField(max_length=100)
     id_travail = models.ForeignKey(Travail, on_delete=models.CASCADE, related_name='groupes')
+    statut_groupe = models.CharField(max_length=10, choices=STATUT_CHOICES, default='ouvert')
+    capacite_max = models.PositiveIntegerField(default=5) # Capacité maximale du groupe
+
+    class Meta:
+        unique_together = ('nom_groupe', 'id_travail') # Un nom de groupe doit être unique pour un travail donné
 
     def __str__(self):
-        return self.nom_groupe
+        return f"Groupe {self.nom_groupe} pour {self.id_travail.titre_tp}"
+
+    def get_members_count(self):
+        return self.membres.count()
 
 
 class Rapport(models.Model):
@@ -142,7 +173,6 @@ class Rapport(models.Model):
 
     def __str__(self):
         return f"Rapport {self.id} pour {self.id_groupe.nom_groupe}"
-
 
 
 def generate_matricule():
@@ -183,17 +213,11 @@ class Etudiant(models.Model):
         on_delete=models.CASCADE,
         related_name='etudiant_profile'
     )
-    #nom_etudiant  = models.CharField(max_length=100)
     id_promotion  = models.ForeignKey(Promotion, on_delete=models.PROTECT, related_name='etudiants',null=True, blank=True)
     id_faculte    = models.ForeignKey(Faculte, on_delete=models.PROTECT, related_name='etudiants', null=True, blank=True)
 
     # inscription dans un groupes
     # id_groupe = models.ManyToManyField(GroupeDeTravail, through='Rejoindre groupe', related_name='etudiants')
-    
-    # def save(self, *args, **kwargs):
-    #     if not self.matricule: # Génère le matricule seulement s'il n'existe pas déjà
-    #         self.matricule = generate_matricule()
-    #     super().save(*args, **kwargs)
     
     def __str__(self):
         return f" ({self.matricule}) - {self.id_promotion} - {self.user.first_name} {self.user.last_name}"
@@ -209,7 +233,7 @@ class SujetDiscussion(models.Model):
         return self.titre_sujet
 
 
-class rejoundregroupe(models.Model):
+class inscriptiongroupe(models.Model):
     id_etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE)
     id_groupe    = models.ForeignKey(GroupeDeTravail, on_delete=models.CASCADE)
     date_inscription = models.DateTimeField(auto_now_add=True)
@@ -222,7 +246,7 @@ class rejoundregroupe(models.Model):
 
 
 class EtudiantGroupe(models.Model):
-    etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE)
+    etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE, related_name='groupes_rejoins')
     groupe   = models.ForeignKey(GroupeDeTravail, on_delete=models.CASCADE)
     est_chef = models.BooleanField("Chef de groupe", default=False)
     date_rejoindre = models.DateTimeField(auto_now_add=True)
@@ -232,7 +256,7 @@ class EtudiantGroupe(models.Model):
 
     def __str__(self):
         role = "Chef" if self.est_chef else "Membre"
-        return f"{self.etudiant} ({role}) dans {self.groupe}"
+        return f"{self.etudiant} ({role}) dans {self.groupe.nom_groupe}"
 
 
 class Contribution(models.Model):
@@ -243,16 +267,26 @@ class Contribution(models.Model):
         (EFILE, 'Fichier'),
     ]
     auteur   = models.ForeignKey(Etudiant, on_delete=models.CASCADE, related_name='contributions')
-    type_contrib = models.CharField(max_length=20, choices=TYPES)
-    contenu     = models.TextField()
+    type_contrib = models.CharField(max_length=20, choices=TYPES, default=ETEXT)
+    contenu     = models.TextField(blank=True, null=True, help_text="Contenu de la contribution (texte ou fichier)")
     #legende     = models.CharField(max_length=255, blank=True)
     date_post   = models.DateTimeField(auto_now_add=True)
     fichier     = models.FileField(upload_to='contributions/', blank=True, null=True)
     id_travail = models.ForeignKey(Travail, on_delete=models.CASCADE, related_name='contributions')
     
+    def clean(self):
+        if self.type_contrib == 'texte' and not self.contenu:
+            raise ValidationError("Une contribution textuelle doit avoir du contenu.")
+        if self.type_contrib == 'fichier' and not self.fichier:
+            raise ValidationError("Une contribution de fichier doit avoir un fichier joint.")
+        if self.type_contrib == 'texte' and self.fichier:
+            raise ValidationError("Une contribution textuelle ne doit pas avoir de fichier joint.")
+        if self.type_contrib == 'fichier' and self.contenu:
+            raise ValidationError("Une contribution de fichier ne doit pas avoir de contenu textuel.")
 
     def __str__(self):
-        return f"{self.get_type_contrib_display()} de {self.auteur} dans {self.id_travail}"
+        return f"Contribution de {self.auteur.user.first_name} pour {self.id_travail.titre_tp}"
+    
 
 
 class Commentaire(models.Model):
@@ -262,7 +296,7 @@ class Commentaire(models.Model):
     date_com    = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Commentaire par {self.auteur}"
+        return f"Commentaire de {self.auteur.user.first_name} sur {self.id_contribution.id_travail.titre_tp}"
 
 
 class Reaction(models.Model):
@@ -280,4 +314,4 @@ class Reaction(models.Model):
         unique_together = ('etudiant', 'contribution')
 
     def __str__(self):
-        return f"{self.get_type_reaction_display()} par {self.etudiant}"
+        return f"{self.etudiant.user.first_name} a {self.type_reaction} {self.contribution.id_travail.titre_tp}"

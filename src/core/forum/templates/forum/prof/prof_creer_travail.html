@@ -1,0 +1,69 @@
+{% extends 'forum/base.html' %}
+{% load static %}
+
+{% block title %}Créer un Nouveau Travail{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-6 bg-gray-100 min-h-screen">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6 border-b pb-4">Créer un Nouveau Travail</h1>
+
+    {% if messages %}
+        <div class="mb-6">
+            {% for message in messages %}
+                <div class="p-4 rounded-md text-sm {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="bg-white rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            
+            {# Champ Titre #}
+            <div>
+                {{ form.titre_tp.label_tag }}
+                {{ form.titre_tp }}
+                {% if form.titre_tp.errors %}<p class="text-red-500 text-xs italic">{{ form.titre_tp.errors }}</p>{% endif %}
+            </div>
+
+            {# Champ Description #}
+            <div>
+                {{ form.description.label_tag }}
+                {{ form.description }}
+                {% if form.description.errors %}<p class="text-red-500 text-xs italic">{{ form.description.errors }}</p>{% endif %}
+            </div>
+
+            {# Champ Date Limite #}
+            <div>
+                {{ form.date_limit.label_tag }}
+                <p class="text-xs text-gray-500 mb-1">Format: YYYY-MM-DD HH:MM (ex: 2025-12-31 23:59)</p>
+                {{ form.date_limit }}
+                {% if form.date_limit.errors %}<p class="text-red-500 text-xs italic">{{ form.date_limit.errors }}</p>{% endif %}
+            </div>
+
+            {# Champ Cours #}
+            <div>
+                {{ form.id_cours.label_tag }}
+                {{ form.id_cours }}
+                {% if form.id_cours.errors %}<p class="text-red-500 text-xs italic">{{ form.id_cours.errors }}</p>{% endif %}
+            </div>
+
+            {# Champ Promotion #}
+            <div>
+                {{ form.id_promotion.label_tag }}
+                {{ form.id_promotion }}
+                {% if form.id_promotion.errors %}<p class="text-red-500 text-xs italic">{{ form.id_promotion.errors }}</p>{% endif %}
+            </div>
+
+            <div class="flex justify-end space-x-4 mt-6">
+                <a href="{% url 'prof_dashboard' %}" class="bg-gray-300 text-gray-800 px-6 py-3 rounded-md hover:bg-gray-400 transition-colors duration-200">Annuler</a>
+                <button type="submit" class="bg-indigo-600 text-white font-bold py-3 px-6 rounded-md hover:bg-indigo-700 focus:outline-none focus:shadow-outline transition-colors duration-200">
+                    Créer le travail
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

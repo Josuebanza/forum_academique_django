@@ -1,4 +1,4 @@
-
+/* 
 (function() {
   let lastFetch = new Date().toISOString();
 
@@ -48,3 +48,4 @@
   setInterval(fetchUpdates, 1000);
   
 })();
+ */
